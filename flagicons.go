@@ -4,7 +4,8 @@
 //	import "github.com/xiyaowong/flagicons"
 //
 //	ui.Image(c, flagicons.MustFlag("jp"))
-//	ui.Image(c, flagicons.MustFlag("gb-eng").Square())
+//	ui.Image(c, flagicons.MustFlag("jp"))
+//	ui.Image(c, flagicons.MustSquare("gb-eng"))
 package flagicons
 
 import (
@@ -20,7 +21,7 @@ import (
 var embedded embed.FS
 
 // flags is the embedded flag files: 1x1, 4x3 and country.json.
-var flags, flagsErr = fs.Sub(embedded, "flags")
+var flags, _ = fs.Sub(embedded, "flags")
 
 // Country is one entry of the country.json of flag-icons.
 type Country struct {
@@ -36,12 +37,14 @@ type Country struct {
 // Parse it once, not in the view, as ui.ParseSVG asks.
 type Flag = ui.SVG
 
+// readFlag reads the flag file of a shape ("1x1" or "4x3") and a code.
+func readFlag(shape, code string) ([]byte, error) {
+	return fs.ReadFile(flags, shape+"/"+code+".svg")
+}
+
 // Flags parses the flag of a code, such as "jp", "gb-eng" or "eu".
 func Flags(code string) (*Flag, error) {
-	if flagsErr != nil {
-		return nil, flagsErr
-	}
-	data, err := fs.ReadFile(flags, "4x3/"+code+".svg")
+	data, err := readFlag("4x3", code)
 	if err != nil {
 		return nil, err
 	}
@@ -61,10 +64,7 @@ func MustFlag(code string) *Flag {
 // Square returns the square 1x1 flag of a code. Some flags have no square
 // version; they show as the 4x3 one.
 func Square(code string) (*Flag, error) {
-	if flagsErr != nil {
-		return nil, flagsErr
-	}
-	data, err := fs.ReadFile(flags, "1x1/"+code+".svg")
+	data, err := readFlag("1x1", code)
 	if err == nil {
 		return ui.ParseSVG(data)
 	}
@@ -98,9 +98,6 @@ func Codes() ([]string, error) {
 // Countries returns the country.json of flag-icons: name, code, capital,
 // continent, and whether the code is an ISO 3166-1 alpha-2 code.
 func Countries() ([]Country, error) {
-	if flagsErr != nil {
-		return nil, flagsErr
-	}
 	data, err := fs.ReadFile(flags, "country.json")
 	if err != nil {
 		return nil, fmt.Errorf("reading country.json: %w", err)
