@@ -1,0 +1,4 @@
+/LICENSE.flags/ binary
+/flags/*.json -text
+/flags/1x1/*.svg -text
+/flags/4x3/*.svg -text
