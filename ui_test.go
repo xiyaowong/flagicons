@@ -9,10 +9,9 @@ import (
 	"github.com/xiyaowong/flagicons"
 )
 
-// gallery shows flags the way an app does: 4x3, square and labeled.
+// gallery shows flags the way an app does: 4x3 and square, labeled.
 type gallery struct {
-	square bool
-	code   string
+	code string
 }
 
 func (g *gallery) view(c *ui.Context) {
