@@ -11,6 +11,7 @@ package flagicons
 import (
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 
@@ -42,13 +43,18 @@ func readFlag(shape, code string) ([]byte, error) {
 	return fs.ReadFile(flags, shape+"/"+code+".svg")
 }
 
-// Flags parses the flag of a code, such as "jp", "gb-eng" or "eu".
+// Flags parses the flag of a code, such as "jp", "gb-eng" or "eu". An
+// unknown code is an error matching fs.ErrNotExist.
 func Flags(code string) (*Flag, error) {
 	data, err := readFlag("4x3", code)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("flag %q: %w", code, err)
 	}
-	return ui.ParseSVG(data)
+	svg, err := ui.ParseSVG(data)
+	if err != nil {
+		return nil, fmt.Errorf("flag %q: %w", code, err)
+	}
+	return svg, nil
 }
 
 // MustFlag is Flags for flags that are part of the program: it panics when
@@ -56,19 +62,27 @@ func Flags(code string) (*Flag, error) {
 func MustFlag(code string) *Flag {
 	svg, err := Flags(code)
 	if err != nil {
-		panic(fmt.Sprintf("flagicons: %v", err))
+		panic(err)
 	}
 	return svg
 }
 
-// Square returns the square 1x1 flag of a code. Some flags have no square
+// Square returns the square 1x1 flag of a code, an error matching
+// fs.ErrNotExist when it has neither shape. Some flags have no square
 // version; they show as the 4x3 one.
 func Square(code string) (*Flag, error) {
 	data, err := readFlag("1x1", code)
-	if err == nil {
-		return ui.ParseSVG(data)
+	if errors.Is(err, fs.ErrNotExist) {
+		return Flags(code)
 	}
-	return Flags(code)
+	if err != nil {
+		return nil, fmt.Errorf("square flag %q: %w", code, err)
+	}
+	svg, err := ui.ParseSVG(data)
+	if err != nil {
+		return nil, fmt.Errorf("square flag %q: %w", code, err)
+	}
+	return svg, nil
 }
 
 // MustSquare is Square for flags that are part of the program: it panics
@@ -76,7 +90,7 @@ func Square(code string) (*Flag, error) {
 func MustSquare(code string) *Flag {
 	svg, err := Square(code)
 	if err != nil {
-		panic(fmt.Sprintf("flagicons: %v", err))
+		panic(err)
 	}
 	return svg
 }

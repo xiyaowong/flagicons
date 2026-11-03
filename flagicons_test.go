@@ -1,6 +1,7 @@
 package flagicons
 
 import (
+	"errors"
 	"io/fs"
 	"path"
 	"strings"
@@ -99,11 +100,18 @@ func TestEveryCodeHasFlags(t *testing.T) {
 }
 
 func TestFlagsUnknownCode(t *testing.T) {
-	if _, err := Flags("nope"); err == nil {
-		t.Error("Flags(nope) should fail")
+	if _, err := Flags("nope"); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("Flags(nope) = %v, want an fs.ErrNotExist", err)
 	}
-	if _, err := Square("nope"); err == nil {
-		t.Error("Square(nope) should fail")
+	if _, err := Square("nope"); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("Square(nope) = %v, want an fs.ErrNotExist", err)
+	}
+	// The errors name the code asked for.
+	if _, err := Flags("nope"); !strings.Contains(err.Error(), `"nope"`) {
+		t.Errorf("Flags(nope) = %q, want the code in the message", err)
+	}
+	if _, err := Square("nope"); !strings.Contains(err.Error(), `"nope"`) {
+		t.Errorf("Square(nope) = %q, want the code in the message", err)
 	}
 }
 
