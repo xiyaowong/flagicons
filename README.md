@@ -19,7 +19,8 @@ ui.Image(c, flagicons.MustSquare("gb-eng"))
 [`ui.ParseSVG`](https://pkg.go.dev/github.com/egoist/mygo/ui#ParseSVG) asks,
 and show it with
 [`ui.Image`](https://pkg.go.dev/github.com/egoist/mygo/ui#Image), in its own
-colors.
+colors — not `ui.Icon`, which paints the SVG in the text color, as flags
+keep their own.
 
 ## Functions
 
