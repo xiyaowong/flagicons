@@ -4,11 +4,12 @@
 //	import "github.com/xiyaowong/flagicons"
 //
 //	ui.Image(c, flagicons.MustFlag("jp"))
-//	ui.Image(c, flagicons.MustFlag("jp"))
 //	ui.Image(c, flagicons.MustSquare("gb-eng"))
+//	ui.Image(c, flagicons.MustCircle("de"))
 package flagicons
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -93,6 +94,62 @@ func MustSquare(code string) *Flag {
 		panic(err)
 	}
 	return svg
+}
+
+// Circle returns the 1x1 flag of a code cut to the circle inscribed in it,
+// for flags in a row or a list, where square corners would show. An unknown
+// code is an error matching fs.ErrNotExist.
+func Circle(code string) (*Flag, error) {
+	data, err := readFlag("1x1", code)
+	if err != nil {
+		return nil, fmt.Errorf("circle flag %q: %w", code, err)
+	}
+	svg, err := ui.ParseSVG(data)
+	if err != nil {
+		return nil, fmt.Errorf("circle flag %q: %w", code, err)
+	}
+	w, h := svg.Size()
+	clipped, err := clipCircle(data, w, h)
+	if err != nil {
+		return nil, fmt.Errorf("circle flag %q: %w", code, err)
+	}
+	svg, err = ui.ParseSVG(clipped)
+	if err != nil {
+		return nil, fmt.Errorf("circle flag %q: %w", code, err)
+	}
+	return svg, nil
+}
+
+// MustCircle is Circle for flags that are part of the program: it panics
+// when the code has no flag.
+func MustCircle(code string) *Flag {
+	svg, err := Circle(code)
+	if err != nil {
+		panic(err)
+	}
+	return svg
+}
+
+// clipCircle wraps the content of an SVG document of a w×h viewBox at 0, 0
+// in a group clipped to the circle inscribed in the viewBox.
+func clipCircle(data []byte, w, h float32) ([]byte, error) {
+	root := bytes.Index(data, []byte("<svg"))
+	if root < 0 {
+		return nil, errors.New("no <svg> element")
+	}
+	open := root + bytes.IndexByte(data[root:], '>')
+	end := bytes.LastIndex(data, []byte("</svg>"))
+	if open < root || end < open {
+		return nil, errors.New("no </svg> element")
+	}
+	var b bytes.Buffer
+	b.Grow(len(data) + 160)
+	b.Write(data[:open+1])
+	fmt.Fprintf(&b, `<defs><clipPath id="flagicons-circle"><circle cx="%g" cy="%g" r="%g"/></clipPath></defs><g clip-path="url(#flagicons-circle)">`, w/2, h/2, min(w, h)/2)
+	b.Write(data[open+1 : end])
+	b.WriteString("</g>")
+	b.Write(data[end:])
+	return b.Bytes(), nil
 }
 
 // Codes returns the codes of all flags: the ISO 3166-1 alpha-2 codes plus
