@@ -13,6 +13,7 @@ import "github.com/xiyaowong/flagicons"
 
 ui.Image(c, flagicons.MustFlag("jp"))
 ui.Image(c, flagicons.MustSquare("gb-eng"))
+ui.Image(c, flagicons.MustCircle("de"))
 ```
 
 `Flag` is a `*ui.SVG`: parse it once, not in the view, as
@@ -30,6 +31,9 @@ keep their own.
 - `Square(code) (*Flag, error)` — the square 1x1 flag; codes without a
   square version show as the 4x3 one.
 - `MustSquare(code) *Flag` — `Square`, panicking on a code without a flag.
+- `Circle(code) (*Flag, error)` — the 1x1 flag cut to the circle inscribed
+  in it, for flags in a row or a list.
+- `MustCircle(code) *Flag` — `Circle`, panicking on a code without a flag.
 - `Codes() ([]string, error)` — all 271 codes.
 - `Countries() ([]Country, error)` — name, code, capital, continent and
   ISO-ness of each.
